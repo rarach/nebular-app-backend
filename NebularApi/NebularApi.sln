@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29411.108
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NebularApi", "NebularApi.csproj", "{99A0F484-2065-4191-B624-FBC1F95BCA1A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{99A0F484-2065-4191-B624-FBC1F95BCA1A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{99A0F484-2065-4191-B624-FBC1F95BCA1A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{99A0F484-2065-4191-B624-FBC1F95BCA1A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{99A0F484-2065-4191-B624-FBC1F95BCA1A}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {66532C51-DECE-4066-84A7-AE0929FC4162}
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,8 @@
+# Visual Studio scaffolding files
+NebularApi/.vs/*
+*.user
+packages/*
+
+# Compiled assemblies
+NebularApi/bin/*
+NebularApi/obj/*
