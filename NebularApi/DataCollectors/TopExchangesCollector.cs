@@ -1,4 +1,8 @@
-﻿using System.Timers;
+﻿using NebularApi.Models;
+using System;
+using System.Linq;
+using System.Text.Json;
+using System.Timers;
 
 
 namespace NebularApi.DataCollectors
@@ -11,11 +15,14 @@ namespace NebularApi.DataCollectors
     /// </remarks>
     internal class TopExchangesCollector
     {
-        private string _horizonUrl;
-        private Timer _timer;
+        private readonly ILog _logger;
+        private readonly string _horizonUrl;
+        private readonly Timer _timer;
 
-        internal TopExchangesCollector(string horizonApiUrl, int intervalMinutes)
+
+        internal TopExchangesCollector(ILog logger, string horizonApiUrl, int intervalMinutes)
         {
+            _logger = logger;
             _horizonUrl = horizonApiUrl.TrimEnd('/') + "/trades?order=desc&limit=200";
             _timer = new Timer(intervalMinutes * 60 * 1000);
         }
@@ -23,21 +30,41 @@ namespace NebularApi.DataCollectors
 
         internal void Start()
         {
+            _logger.Info("===================== Starting TopExchanges data collection =====================");
             _timer.AutoReset = true;
             _timer.Elapsed += Timer_Elapsed;
             _timer.Start();
+            Timer_Elapsed(this, null);
         }
 
         private void Timer_Elapsed(object sender, ElapsedEventArgs e)
         {
-            System.Console.WriteLine("DEBUG: Top Exchanges collector timer elapsed");
-
             var webClient = new System.Net.WebClient();
-            string json = webClient.DownloadString(_horizonUrl);
+            try
+            {
+                string json = webClient.DownloadString(_horizonUrl);
 
-            int debug = new System.Text.RegularExpressions.Regex("paging_token").Matches(json).Count;
-            System.Console.ForegroundColor = System.ConsoleColor.Magenta;
-            System.Console.WriteLine($"Found {debug} records");
+                Trades trades = JsonSerializer.Deserialize<Trades>(json);
+                _logger.Info($"Parsed {trades._embedded.records.Count} last trades");
+
+                DateTime dataEnd = trades._embedded.records[0].LedgerCloseTime;
+                DateTime dataStart = dataEnd.Subtract(new TimeSpan(24, 0, 0));
+
+                Trade lastRecord = trades._embedded.records.Last();
+                while (lastRecord.LedgerCloseTime > dataStart)
+                {
+                    string cursor = trades._embedded.records.Last().paging_token;
+                    string url = $"{_horizonUrl}&cursor={cursor}";
+                    json = webClient.DownloadString(url);
+                    trades = JsonSerializer.Deserialize<Trades>(json);
+                    _logger.Info($"Parsed {trades._embedded.records.Count} trades (last from {lastRecord.ledger_close_time})");
+                    lastRecord = trades._embedded.records.Last();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex.Message);
+            }
         }
     }
 }

@@ -1,12 +1,12 @@
-﻿using System;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
+using System;
 
 
 namespace NebularApi.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class TopExchangesController : ControllerBase
+    public class LogsController : ControllerBase
     {
         [HttpGet]
         public string Get()
@@ -16,7 +16,7 @@ namespace NebularApi.Controllers
                 string exeDir = AppDomain.CurrentDomain.BaseDirectory;
 
                 //Get the data from "database"
-                string data = System.IO.File.ReadAllText(exeDir + @"data\top_exchanges.json");
+                string data = System.IO.File.ReadAllText(exeDir + @".\data\logs.txt");
                 return data;
             }
             catch (Exception ex)

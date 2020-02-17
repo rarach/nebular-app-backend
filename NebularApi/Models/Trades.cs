@@ -9,40 +9,46 @@ namespace NebularApi.Models
     /// </summary>
     public class Trades
     {
-        public EmbededTradeRecords _embedded;
+        public EmbededTradeRecords _embedded { get; set; }
     }
 
     public class EmbededTradeRecords
     {
-        public List<Trade> records;
+        public List<Trade> records { get; set; }
     }
 
     public class Trade
     {
-        public string paging_token;
-        public string ledger_close_time;
-        public decimal/*TODO: verify*/ base_amount;
+        public string paging_token { get; set; }
+        public string ledger_close_time { get; set; }
+        public string base_amount { get; set; }
         /// <summary>
         /// "native" for XLM
         /// </summary>
-        public string base_asset_type;
-        public string base_asset_code;
-        public string base_asset_issuer;
-        public decimal counter_amount;
+        public string base_asset_type { get; set; }
+        public string base_asset_code { get; set; }
+        public string base_asset_issuer { get; set; }
+        public string counter_amount { get; set; }
         /// <summary>
         /// "native" for XLM
         /// </summary>
-        public string counter_asset_type;
-        public string counter_asset_code;
-        public string counter_asset_issuer;
+        public string counter_asset_type { get; set; }
+        public string counter_asset_code { get; set; }
+        public string counter_asset_issuer { get; set; }
 
-
-        public DateTime LedgerCloseTime
+        internal decimal BaseAmount
         {
-            get
-            {
-                return DateTime.Parse(ledger_close_time);   //TODO: guess but might work :-|
-            }
+            get { return Decimal.Parse(base_amount); }
+        }
+
+        internal decimal CounterAmount
+        {
+            get { return Decimal.Parse(counter_amount); }
+        }
+
+        internal DateTime LedgerCloseTime
+        {
+            get { return DateTime.Parse(ledger_close_time); }
         }
     }
 }

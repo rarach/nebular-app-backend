@@ -21,7 +21,8 @@ namespace NebularApi
             string horizonUrl = appConfig.GetValue<string>("HorizonApiUrl");
             int dataInterval = appConfig.GetValue<int>("DataCollectionInterval");
 
-            var exchCollector = new TopExchangesCollector(horizonUrl, dataInterval);
+            ILog logger = new ConsoleAndFileLogger(System.AppDomain.CurrentDomain.BaseDirectory + "data\\logs.txt");
+            var exchCollector = new TopExchangesCollector(logger, horizonUrl, dataInterval);
             exchCollector.Start();
         }
 
