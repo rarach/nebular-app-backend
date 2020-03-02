@@ -32,7 +32,7 @@ jobs:
 
     steps:
     - name: Deploy to Azure web app
-      uses: azure/appservice-actions/webapp@master
+      uses: azure/webapps-deploy@v2
       with:
         app-name: nebularapi
         publish-profile: ${{ secrets.azureWebAppPublishProfile }}    
