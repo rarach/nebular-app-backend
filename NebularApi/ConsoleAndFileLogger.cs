@@ -12,6 +12,8 @@ namespace NebularApi
         public ConsoleAndFileLogger(string filePath)
         {
             _logFilePath = filePath;
+            //Create the directory structure if it's missing
+            Directory.CreateDirectory(Path.GetDirectoryName(filePath));
         }
 
 

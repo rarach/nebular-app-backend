@@ -1,4 +1,5 @@
 # Visual Studio scaffolding files
+.vs/*
 NebularApi/.vs/*
 *.user
 packages/*
