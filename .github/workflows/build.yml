@@ -23,7 +23,7 @@ jobs:
 
     steps:
     - name: PLACEHOLDER FOR FUTURE UNIT TESTS
-      run: "echo Hello tests! (TODO)"
+      run: echo "Hello tests! (TODO)"
 
   deploy:
     needs: test
