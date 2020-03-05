@@ -16,7 +16,7 @@ jobs:
     - name: Build and publish with dotnet
       run: |
           dotnet build --configuration Release
-          dotnet publish -c Release -o nebularApiApp 
+          dotnet publish -c Release -o ./nebularApiApp 
 
   test:
     needs: build
@@ -38,4 +38,4 @@ jobs:
       with:
         app-name: nebularapi
         publish-profile: ${{ secrets.azureWebAppPublishProfile }}    
-        package: './nebularApiApp'
+        package: ./nebularApiApp
