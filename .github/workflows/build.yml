@@ -3,39 +3,30 @@ name: CI
 on: [push]
 
 jobs:
-  build:
-
+  build-test-and-deploy:
     runs-on: ubuntu-latest
-
     steps:
+
     - uses: actions/checkout@v2
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: '3.1.101'
+
+    # PROD build
     - name: Build and publish with dotnet
       run: |
           dotnet build --configuration Release
           dotnet publish -c Release -o ./nebularApiApp 
 
-  test:
-    needs: build
-    name: Run tests
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: PLACEHOLDER FOR FUTURE UNIT TESTS
+    # Depending on what kind of build there's been, these would be unit or acceptance tests
+    - name: PLACEHOLDER FOR FUTURE TESTS
       run: echo "Hello tests! (TODO)"
 
-  deploy:
-    needs: test
-    name: Deploy to the cloud
-    runs-on: ubuntu-latest
-
-    steps:
+    # Deploy
     - name: Deploy to Azure web app
       uses: azure/webapps-deploy@v2
       with:
         app-name: nebularapi
         publish-profile: ${{ secrets.azureWebAppPublishProfile }}    
-        package: ./nebularApiApp
+        package: './nebularApiApp'
