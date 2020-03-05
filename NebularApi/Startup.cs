@@ -10,6 +10,7 @@ namespace NebularApi
 {
     public class Startup
     {
+        private ILog _logger = new MemoryLogger();
         public IConfiguration Configuration { get; }
 
 
@@ -21,8 +22,8 @@ namespace NebularApi
             string horizonUrl = appConfig.GetValue<string>("HorizonApiUrl");
             int dataInterval = appConfig.GetValue<int>("DataCollectionInterval");
 
-            ILog logger = new ConsoleAndFileLogger(System.AppDomain.CurrentDomain.BaseDirectory + "data\\logs.txt");
-            var exchCollector = new TopExchangesCollector(logger, horizonUrl, dataInterval);
+//            ILog logger = new ConsoleAndFileLogger(System.AppDomain.CurrentDomain.BaseDirectory + "data\\logs.txt");
+            var exchCollector = new TopExchangesCollector(_logger, horizonUrl, dataInterval);
             exchCollector.Start();
         }
 
@@ -30,6 +31,7 @@ namespace NebularApi
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddSingleton(typeof(ILog), _logger);
             services.AddControllers();
         }
 

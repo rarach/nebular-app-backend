@@ -17,6 +17,7 @@ namespace NebularApi.DataCollectors
     {
         private readonly ILog _logger;
         private readonly string _horizonUrl;
+        private readonly int _interval;
         private readonly Timer _timer;
 
 
@@ -24,6 +25,7 @@ namespace NebularApi.DataCollectors
         {
             _logger = logger;
             _horizonUrl = horizonApiUrl.TrimEnd('/') + "/trades?order=desc&limit=200";
+            _interval = intervalMinutes;
             _timer = new Timer(intervalMinutes * 60 * 1000);
         }
 
@@ -60,6 +62,8 @@ namespace NebularApi.DataCollectors
                     _logger.Info($"Parsed {trades._embedded.records.Count} trades (last from {lastRecord.ledger_close_time})");
                     lastRecord = trades._embedded.records.Last();
                 }
+
+                _logger.Info($"Going to sleep for {_interval} minutes.");
             }
             catch (Exception ex)
             {

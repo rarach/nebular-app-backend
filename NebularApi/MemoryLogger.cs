@@ -1,21 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 
 
 namespace NebularApi
 {
-    public class ConsoleAndFileLogger : ILog
+    public class MemoryLogger : ILog
     {
-        private readonly string _logFilePath;
-
-
-        public ConsoleAndFileLogger(string filePath)
-        {
-            _logFilePath = filePath;
-            //Create the directory structure if it's missing
-            Directory.CreateDirectory(Path.GetDirectoryName(filePath));
-        }
+        private const int Capacity = 1000;
+        private readonly List<string> _logs = new List<string>();   //TODO: there must be some .NET native queue or something
 
 
         public void Error(string message)
@@ -35,8 +27,7 @@ namespace NebularApi
 
         public IEnumerable<string> Dumb()
         {
-            string[] lines = File.ReadAllLines(_logFilePath);
-            return lines;
+            return _logs;
         }
 
 
@@ -44,11 +35,10 @@ namespace NebularApi
         {
             message = $"{DateTime.Now.ToString("MMM-dd HH:mm:ss")} {logType} {message}";
 
-            Console.WriteLine(message);
-
-            using (StreamWriter sw = File.AppendText(_logFilePath))
+            _logs.Add(message);
+            if (_logs.Count >= Capacity)
             {
-                sw.WriteLine(message);
+                _logs.RemoveAt(0);
             }
         }
     }
