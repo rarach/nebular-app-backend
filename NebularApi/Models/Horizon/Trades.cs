@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 
 
-namespace NebularApi.Models
+namespace NebularApi.Models.Horizon
 {
     /// <summary>
-    /// As seen on HORIZON/trades
+    /// As seen on {HORIZON}/trades
     /// </summary>
     public class Trades
     {

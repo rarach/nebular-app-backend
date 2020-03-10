@@ -10,7 +10,8 @@ namespace NebularApi
 {
     public class Startup
     {
-        private ILog _logger = new MemoryLogger();
+        private readonly ILog _logger = new MemoryLogger();
+        private readonly TopExchangesStorage _database = new TopExchangesStorage();
         public IConfiguration Configuration { get; }
 
 
@@ -23,7 +24,7 @@ namespace NebularApi
             int dataInterval = appConfig.GetValue<int>("DataCollectionInterval");
 
 //            ILog logger = new ConsoleAndFileLogger(System.AppDomain.CurrentDomain.BaseDirectory + "data\\logs.txt");
-            var exchCollector = new TopExchangesCollector(_logger, horizonUrl, dataInterval);
+             var exchCollector = new TopExchangesCollector(_logger, _database, horizonUrl, dataInterval);
             exchCollector.Start();
         }
 
@@ -32,6 +33,7 @@ namespace NebularApi
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddSingleton(typeof(ILog), _logger);
+            services.AddSingleton(typeof(TopExchangesStorage), _database);
             services.AddControllers();
         }
 

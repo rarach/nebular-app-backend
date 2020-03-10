@@ -1,4 +1,5 @@
-﻿using NebularApi.Models;
+﻿using NebularApi.Models.Horizon;
+using NebularApi.Models.Nebular;
 using System;
 using System.Linq;
 using System.Text.Json;
@@ -16,14 +17,16 @@ namespace NebularApi.DataCollectors
     internal class TopExchangesCollector
     {
         private readonly ILog _logger;
+        private readonly TopExchangesStorage _storage;
         private readonly string _horizonUrl;
         private readonly int _interval;
         private readonly Timer _timer;
 
 
-        internal TopExchangesCollector(ILog logger, string horizonApiUrl, int intervalMinutes)
+        internal TopExchangesCollector(ILog logger, TopExchangesStorage storage, string horizonApiUrl, int intervalMinutes)
         {
             _logger = logger;
+            _storage = storage;
             _horizonUrl = horizonApiUrl.TrimEnd('/') + "/trades?order=desc&limit=200";
             _interval = intervalMinutes;
             _timer = new Timer(intervalMinutes * 60 * 1000);
@@ -62,6 +65,40 @@ namespace NebularApi.DataCollectors
                     _logger.Info($"Parsed {trades._embedded.records.Count} trades (last from {lastRecord.ledger_close_time})");
                     lastRecord = trades._embedded.records.Last();
                 }
+
+
+
+                //TODO!
+                _storage.Data = new TopExchanges
+                {
+                    timestamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.FFFZ"),
+                    topExchanges = new[]
+                    {
+                        new TopExchange
+                        {
+                            baseAsset = new Asset
+                            {
+                                code = "ASDF",
+                                issuer = new Account
+                                {
+                                    address = "GASDFFFFFFF",
+                                    domain = "asdf.com"
+                                }
+                            },
+                            counterAsset = new Asset
+                            {
+                                code = "xyz",
+                                issuer = new Account
+                                {
+                                    address = "GDDDSCAMCOIN",
+                                    domain = "example.org"
+                                }
+                            }
+                        }
+                    }
+                };
+
+
 
                 _logger.Info($"Going to sleep for {_interval} minutes.");
             }

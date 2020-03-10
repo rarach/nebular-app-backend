@@ -20,21 +20,6 @@ namespace NebularApi.Controllers
         [HttpGet]
         public string Get()
         {
-            /*
-            try
-            {
-                string exeDir = AppDomain.CurrentDomain.BaseDirectory;
-
-                //Get the data from "database"
-                string data = System.IO.File.ReadAllText(exeDir + @".\data\logs.txt");
-                return data;
-            }
-            catch (Exception ex)
-            {
-                return @"{ ""error"": ""Failed to read top_exchanges.json. Exception=" + ex.Message + @""" }";
-            }
-            */
-
             var logLines = _logger.Dumb();
             string allLogs = String.Join(Environment.NewLine, logLines);
             return allLogs;

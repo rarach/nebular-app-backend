@@ -1,4 +1,4 @@
-﻿using System;
+﻿using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 
 
@@ -8,21 +8,20 @@ namespace NebularApi.Controllers
     [Route("api/[controller]")]
     public class TopExchangesController : ControllerBase
     {
+        private readonly TopExchangesStorage _storage;
+
+
+        public TopExchangesController(TopExchangesStorage storage)
+        {
+            _storage = storage;
+        }
+
+
         [HttpGet]
         public string Get()
         {
-            try
-            {
-                string exeDir = AppDomain.CurrentDomain.BaseDirectory;
-
-                //Get the data from "database"
-                string data = System.IO.File.ReadAllText(exeDir + @"data\top_exchanges.json");
-                return data;
-            }
-            catch (Exception ex)
-            {
-                return @"{ ""error"": ""Failed to read top_exchanges.json. Exception=" + ex.Message + @""" }";
-            }
+            string json = JsonSerializer.Serialize(_storage.Data);
+            return json;
         }
     }
 }
