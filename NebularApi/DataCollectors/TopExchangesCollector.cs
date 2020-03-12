@@ -1,8 +1,7 @@
 ﻿using NebularApi.Models.Horizon;
 using NebularApi.Models.Nebular;
 using System;
-using System.Linq;
-using System.Text.Json;
+using System.Collections.Generic;
 using System.Timers;
 
 
@@ -12,22 +11,23 @@ namespace NebularApi.DataCollectors
     /// Extract data about top exchanges in past 24 hours based on volume.
     /// </summary>
     /// <remarks>
-    /// Exchanges are filtered through blacklist of scam tokens.
+    /// Exchanges are filtered through blacklist of scam tokens. TODO!
     /// </remarks>
     internal class TopExchangesCollector
     {
         private readonly ILog _logger;
+        private readonly HorizonService _horizon;
         private readonly TopExchangesStorage _storage;
-        private readonly string _horizonUrl;
         private readonly int _interval;
         private readonly Timer _timer;
+        private bool _inProgress = false;
 
 
-        internal TopExchangesCollector(ILog logger, TopExchangesStorage storage, string horizonApiUrl, int intervalMinutes)
+        internal TopExchangesCollector(ILog logger, HorizonService horizon, TopExchangesStorage storage, int intervalMinutes)
         {
             _logger = logger;
+            _horizon = horizon;
             _storage = storage;
-            _horizonUrl = horizonApiUrl.TrimEnd('/') + "/trades?order=desc&limit=200";
             _interval = intervalMinutes;
             _timer = new Timer(intervalMinutes * 60 * 1000);
         }
@@ -44,61 +44,19 @@ namespace NebularApi.DataCollectors
 
         private void Timer_Elapsed(object sender, ElapsedEventArgs e)
         {
-            var webClient = new System.Net.WebClient();
+            if (_inProgress)
+            {
+                _logger.Warning("Cannot collect top exchanges now, another processing is still running");
+                return;
+            }
+            _inProgress = true;
+
+            List<Trade> trades = _horizon.GetTrades(24);
+
             try
             {
-                string json = webClient.DownloadString(_horizonUrl);
-
-                Trades trades = JsonSerializer.Deserialize<Trades>(json);
-                _logger.Info($"Parsed {trades._embedded.records.Count} last trades");
-
-                DateTime dataEnd = trades._embedded.records[0].LedgerCloseTime;
-                DateTime dataStart = dataEnd.Subtract(new TimeSpan(24, 0, 0));
-
-                Trade lastRecord = trades._embedded.records.Last();
-                while (lastRecord.LedgerCloseTime > dataStart)
-                {
-                    string cursor = trades._embedded.records.Last().paging_token;
-                    string url = $"{_horizonUrl}&cursor={cursor}";
-                    json = webClient.DownloadString(url);
-                    trades = JsonSerializer.Deserialize<Trades>(json);
-                    _logger.Info($"Parsed {trades._embedded.records.Count} trades (last from {lastRecord.ledger_close_time})");
-                    lastRecord = trades._embedded.records.Last();
-                }
-
-
-
-                //TODO!
-                _storage.Data = new TopExchanges
-                {
-                    timestamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.FFFZ"),
-                    topExchanges = new[]
-                    {
-                        new TopExchange
-                        {
-                            baseAsset = new Asset
-                            {
-                                code = "ASDF",
-                                issuer = new Account
-                                {
-                                    address = "GASDFFFFFFF",
-                                    domain = "asdf.com"
-                                }
-                            },
-                            counterAsset = new Asset
-                            {
-                                code = "xyz",
-                                issuer = new Account
-                                {
-                                    address = "GDDDSCAMCOIN",
-                                    domain = "example.org"
-                                }
-                            }
-                        }
-                    }
-                };
-
-
+                Dictionary<string, decimal> volumes = CalculateVolume(trades);
+                CollectTopExchanges(volumes, 12);
 
                 _logger.Info($"Going to sleep for {_interval} minutes.");
             }
@@ -106,6 +64,140 @@ namespace NebularApi.DataCollectors
             {
                 _logger.Error(ex.Message);
             }
+            finally
+            {
+                _inProgress = false;
+            }
+        }
+
+
+        /// <summary>Get given number of top exchanges by volume (in XLM)</summary>
+        private void CollectTopExchanges(Dictionary<string, decimal> volumes, int count)
+        {
+            var topExchanges = new List<TopExchange>();
+            while (count-- > 0)
+            {
+                decimal maxVolume = -1m;
+                string maxMarketId = null;
+
+                foreach (var volume in volumes)
+                {
+                    if (volume.Value > maxVolume)
+                    {
+                        maxVolume = volume.Value;
+                        maxMarketId = volume.Key;
+                    }
+                }
+
+                //We didn't have enough data to pick from. Should never happen.
+                if (null == maxMarketId)
+                {
+                    return;
+                }
+
+                volumes.Remove(maxMarketId);
+
+                string[] chunks = maxMarketId.Split(new char[] { '-', '/' });
+                var exchange = new TopExchange
+                {
+                    baseAsset = new Asset { code = chunks[0] },
+                    counterAsset = new Asset { code = chunks[2] }
+                };
+
+                Account baseIssuer = "native" == chunks[1] ? null : new Account { address = chunks[1] };
+                if (null != baseIssuer)
+                {
+                    baseIssuer.domain = _horizon.GetIssuerDomain(exchange.baseAsset.code, baseIssuer.address);
+                }
+                exchange.baseAsset.issuer = baseIssuer;
+
+                Account counterIssuer = "native" == chunks[3] ? null : new Account { address = chunks[3] };
+                if (null != counterIssuer)
+                {
+                    counterIssuer.domain = _horizon.GetIssuerDomain(exchange.counterAsset.code, counterIssuer.address);
+                }
+                exchange.counterAsset.issuer = counterIssuer;
+
+                topExchanges.Add(exchange);
+            }
+
+            _storage.Data = new TopExchanges
+            {
+                timestamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.FFFZ"),
+                topExchanges = topExchanges.ToArray()
+            };
+        }
+
+
+        private Dictionary<string, decimal> CalculateVolume(IList<Trade> trades)
+        {
+            var volumes = new Dictionary<string, decimal>();
+
+            foreach (Trade trade in trades)
+            {
+                decimal volumeInNative = -1m;
+                string baseAssetId = "XLM-native";
+                string counterAssetId = "XLM-native";
+
+                if ("native" != trade.base_asset_type)
+                {
+                    baseAssetId = trade.base_asset_code + "-" + trade.base_asset_issuer;
+                }
+                else
+                {
+                    //Base asset is XLM => we have direct volume
+                    volumeInNative = trade.BaseAmount;
+                }
+
+                if ("native" != trade.counter_asset_type)
+                {
+                    counterAssetId = trade.counter_asset_code + "-" + trade.counter_asset_issuer;
+                }
+                else
+                {
+                    //Counter asset is XLM => we have direct volume
+                    volumeInNative = trade.CounterAmount;
+                }
+
+                string marketId = baseAssetId + "/" + counterAssetId;
+                string marketIdInverse = counterAssetId + "/" + baseAssetId;
+
+                //We might be already counting in swapped market
+                if (volumes.ContainsKey(marketIdInverse))
+                {
+                    marketId = marketIdInverse;
+                }
+
+                if (!volumes.ContainsKey(marketId))
+                {
+                    volumes.Add(marketId, 0m);
+                }
+
+                if (volumeInNative > 0m)
+                {
+                    volumes[marketId] += volumeInNative;
+                    continue;
+                }
+
+                //Try to find price of base asset in XLM
+                decimal? price = _horizon.GetAssetPriceInNative(trade.base_asset_code, trade.base_asset_type, trade.base_asset_issuer);
+                if (null != price)
+                {
+                    volumeInNative = price.Value * trade.BaseAmount;
+                    volumes[marketId] += volumeInNative;
+                    continue;
+                }
+
+                //Find price of counter asset
+                price = _horizon.GetAssetPriceInNative(trade.counter_asset_code, trade.counter_asset_type, trade.counter_asset_issuer);
+                if (null != price)
+                {
+                    volumeInNative = price.Value * trade.CounterAmount;
+                    volumes[marketId] += volumeInNative;
+                }
+            }
+
+            return volumes;
         }
     }
 }

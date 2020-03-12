@@ -9,10 +9,10 @@ namespace NebularApi.Models.Horizon
     /// </summary>
     public class Trades
     {
-        public EmbededTradeRecords _embedded { get; set; }
+        public EmbeddedTradeRecords _embedded { get; set; }
     }
 
-    public class EmbededTradeRecords
+    public class EmbeddedTradeRecords
     {
         public List<Trade> records { get; set; }
     }
@@ -49,6 +49,18 @@ namespace NebularApi.Models.Horizon
         internal DateTime LedgerCloseTime
         {
             get { return DateTime.Parse(ledger_close_time); }
+        }
+
+        /// <summary>Price of base asset</summary>
+        internal decimal BasePrice
+        {
+            get { return CounterAmount / BaseAmount; }
+        }
+
+        /// <summary>Price of counter asset</summary>
+        internal decimal CounterPrice
+        {
+            get { return BaseAmount / CounterAmount; }
         }
     }
 }
