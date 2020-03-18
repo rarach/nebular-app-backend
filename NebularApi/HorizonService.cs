@@ -106,7 +106,7 @@ namespace NebularApi
             _priceCache.Add(id, new Tuple<DateTime, decimal>(DateTime.UtcNow, trade.BasePrice));
             _logger.Info($"Price of {assetCode}-{assetIssuer} ({trade.BasePrice} XLM) saved to cache");
 
-            return trade.BaseAmount;
+            return trade.BasePrice;
         }
 
         internal string GetIssuerDomain(string assetCode, string issuerAddress)
