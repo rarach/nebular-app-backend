@@ -168,6 +168,12 @@ namespace NebularApi.DataCollectors
                     marketId = marketIdInverse;
                 }
 
+                //For non-XLM markets, swap the assets order if the counter asset is significantly more valuable than the base asset.
+                if ("native" != trade.base_asset_type && "native" != trade.counter_asset_type && trade.BasePrice < 0.01m)
+                {
+                    marketId = marketIdInverse;
+                }
+
                 if (!volumes.ContainsKey(marketId))
                 {
                     volumes.Add(marketId, 0m);
