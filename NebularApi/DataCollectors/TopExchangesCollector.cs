@@ -35,11 +35,11 @@ namespace NebularApi.DataCollectors
 
         internal void Start()
         {
-            _logger.Info("===================== Starting TopExchanges data collection =====================");
             _timer.AutoReset = true;
             _timer.Elapsed += Timer_Elapsed;
             _timer.Start();
-            Timer_Elapsed(this, null);
+
+            new System.Threading.Thread(() => Timer_Elapsed(this, null)).Start();
         }
 
         private void Timer_Elapsed(object sender, ElapsedEventArgs e)
@@ -49,6 +49,8 @@ namespace NebularApi.DataCollectors
                 _logger.Warning("Cannot collect top exchanges now, another processing is still running");
                 return;
             }
+
+            _logger.Info("===================== Starting TopExchanges data collection =====================");
             _inProgress = true;
 
             List<Trade> trades = _horizon.GetTrades(24);
@@ -68,6 +70,8 @@ namespace NebularApi.DataCollectors
             {
                 _inProgress = false;
             }
+
+            _logger.Info("===================== Finished TopExchanges data collection =====================");
         }
 
 
@@ -132,9 +136,16 @@ namespace NebularApi.DataCollectors
         private Dictionary<string, decimal> CalculateVolume(IList<Trade> trades)
         {
             var volumes = new Dictionary<string, decimal>();
+            int count = 0;
 
             foreach (Trade trade in trades)
             {
+                if (++count >= 1000)
+                {
+                    count = 0;
+                    _logger.Info("Processed volume of another 1000 trades...");
+                }
+
                 decimal volumeInNative = -1m;
                 string baseAssetId = "XLM-native";
                 string counterAssetId = "XLM-native";

@@ -104,7 +104,7 @@ namespace NebularApi
             }
 
             _priceCache.Add(id, new Tuple<DateTime, decimal>(DateTime.UtcNow, trade.BasePrice));
-            _logger.Info($"Price of {assetCode}-{assetIssuer} ({trade.BasePrice} XLM) saved to cache");
+            _logger.Info($"Cached price of {assetCode}-{assetIssuer} ({trade.BasePrice:0.00000000} XLM)");
 
             return trade.BasePrice;
         }

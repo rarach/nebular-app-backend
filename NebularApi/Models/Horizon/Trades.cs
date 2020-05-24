@@ -36,6 +36,9 @@ namespace NebularApi.Models.Horizon
         public string counter_asset_code { get; set; }
         public string counter_asset_issuer { get; set; }
 
+        public Price price { get; set; }
+
+
         internal decimal BaseAmount
         {
             get { return Decimal.Parse(base_amount); }
@@ -54,13 +57,14 @@ namespace NebularApi.Models.Horizon
         /// <summary>Price of base asset</summary>
         internal decimal BasePrice
         {
-            get { return CounterAmount / BaseAmount; }
+            get { return price.n / price.d; }
         }
+    }
 
-        /// <summary>Price of counter asset</summary>
-        internal decimal CounterPrice
-        {
-            get { return BaseAmount / CounterAmount; }
-        }
+
+    public class Price
+    {
+        public decimal n { get; set; }
+        public decimal d { get; set; }
     }
 }
