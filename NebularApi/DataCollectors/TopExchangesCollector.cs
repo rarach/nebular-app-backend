@@ -64,7 +64,7 @@ namespace NebularApi.DataCollectors
             }
             catch (Exception ex)
             {
-                _logger.Error(ex.Message);
+                _logger.Error(ex.Message + Environment.NewLine + ex.StackTrace);
             }
             finally
             {
@@ -178,10 +178,17 @@ namespace NebularApi.DataCollectors
                 {
                     marketId = marketIdInverse;
                 }
-
                 //For non-XLM markets, swap the assets order if the counter asset is significantly more valuable than the base asset.
-                if ("native" != trade.base_asset_type && "native" != trade.counter_asset_type && trade.BasePrice < 0.01m)
+                else if ("native" != trade.base_asset_type && "native" != trade.counter_asset_type && trade.BasePrice < 0.01m)
                 {
+                    //If we already have some volume for the marketId, rewire it to marketIdInverse
+                    decimal volumeSoFar;
+                    if (volumes.TryGetValue(marketId, out volumeSoFar))
+                    {
+                        volumes.Add(marketIdInverse, volumeSoFar);
+                        volumes.Remove(marketId);
+                    }
+
                     marketId = marketIdInverse;
                 }
 

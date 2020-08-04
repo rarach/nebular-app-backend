@@ -64,7 +64,7 @@ namespace NebularApi
             }
             catch (Exception ex)
             {
-                _logger.Error(ex.Message);
+                _logger.Error(ex.Message + Environment.NewLine + ex.StackTrace);
             }
 
             return trades;
