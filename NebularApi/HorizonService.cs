@@ -137,7 +137,7 @@ namespace NebularApi
             }
 
             string domain = assets._embedded.records[0]?._links?.toml?.href;
-            if (null != domain)
+            if (domain != null && Uri.IsWellFormedUriString(domain, UriKind.RelativeOrAbsolute))
             {
                 domain = new Uri(domain).Host;
             }
