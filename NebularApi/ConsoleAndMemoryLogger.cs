@@ -33,7 +33,7 @@ namespace NebularApi
 
         private void Log(string logType, string message)
         {
-            message = $"{DateTime.Now.ToString("MMM-dd HH:mm:ss")} {logType} {message}";
+            message = $"{DateTime.UtcNow.ToString("MMM-dd HH:mm:ss")} {logType} {message}";
             Console.WriteLine(message);
 
             _logs.Add(message);

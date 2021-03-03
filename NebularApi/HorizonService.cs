@@ -137,9 +137,13 @@ namespace NebularApi
             }
 
             string domain = assets._embedded.records[0]?._links?.toml?.href;
-            if (domain != null && Uri.IsWellFormedUriString(domain, UriKind.RelativeOrAbsolute))
+            if (!String.IsNullOrWhiteSpace(domain))
             {
-                domain = new Uri(domain).Host;
+                Uri tempUri;
+                if (Uri.TryCreate(domain, UriKind.RelativeOrAbsolute, out tempUri))
+                {
+                    domain = tempUri.Host;
+                }
             }
             _domainCache.Add(id, domain);
             _logger.Info($"Asset {assetCode}-{issuerAddress} issued by {domain}");
