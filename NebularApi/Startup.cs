@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+
 using NebularApi.DataCollectors;
 
 
@@ -8,6 +11,7 @@ namespace NebularApi
 {
     public class Startup
     {
+        private const string CORS_POLICY_NAME = "AllowAllLocalhost";
         private readonly ILog _logger = new ConsoleAndMemoryLogger();
         private readonly TopExchangesStorage _database = new TopExchangesStorage();
         public IConfiguration Configuration { get; }
@@ -30,13 +34,22 @@ namespace NebularApi
 
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddCors(options =>
+            {
+                options.AddPolicy(CORS_POLICY_NAME, builder =>  builder.AllowAnyOrigin());
+            });
             services.AddSingleton(typeof(ILog), _logger);
             services.AddSingleton(typeof(TopExchangesStorage), _database);
             services.AddControllers();
         }
 
-        public void Configure(IApplicationBuilder app)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
+            if (env.IsDevelopment())
+            {
+                app.UseCors(CORS_POLICY_NAME);
+            }
+
             //We can do this even in PROD for this kind of system
             app.UseDeveloperExceptionPage();
 

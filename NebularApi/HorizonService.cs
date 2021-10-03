@@ -150,5 +150,84 @@ namespace NebularApi
 
             return domain;
         }
+
+        /// <summary>
+        /// Evaluates if market is rich enough based on its orderbook. i.e. with small number of asks/bids
+        /// </summary>
+        /// <param name="marketId">Exchange to be evaluated</param>
+        /// <param name="minOrderbookItems">Min. number of asks+bids to consider a market rich enough</param>
+        internal bool HasSufficientOrderbook(string marketId, ushort minOrderbookItems)
+        {
+            string url = GetOrderbookUrl(marketId, minOrderbookItems);
+            try
+            {
+                string json = _webClient.DownloadString(url);
+                Orderbook orderbook = JsonSerializer.Deserialize<Orderbook>(json);
+                if (orderbook.bids.Count + orderbook.asks.Count >= minOrderbookItems)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error($"Failed to get order-book for {marketId}. Message: {ex.Message}");
+                return true;
+            }
+        }
+
+        private string GetOrderbookUrl(string marketId, ushort maxItems)
+        {
+            string[] chunks = marketId.Split(new char[] { '-', '/' });
+            string baseAssetCode = chunks[0];
+            string baseIssuer = "native" == chunks[1] ? null : chunks[1];
+            string counterAssetCode = chunks[2];
+            string counterIssuer = "native" == chunks[3] ? null : chunks[3];
+
+
+            string url = $"{_horizonUrl}/order_book?selling_asset_type=";
+            if (null == baseIssuer)
+            {
+                url += "native&selling_asset_code=XLM";
+            }
+            else
+            {
+                if (baseAssetCode.Length <= 4)
+                {
+                    url += "credit_alphanum4";
+                }
+                else
+                {
+                    url += "credit_alphanum12";
+                }
+
+                url += $"&selling_asset_code={baseAssetCode}&selling_asset_issuer={baseIssuer}";
+            }
+
+            if (null == counterIssuer)
+            {
+                url += "&buying_asset_type=native&buying_asset_code=XLM";
+            }
+            else
+            {
+                if (counterAssetCode.Length <= 4)
+                {
+                    url += "&buying_asset_type=credit_alphanum4";
+                }
+                else
+                {
+                    url += "&buying_asset_type=credit_alphanum12";
+                }
+
+                url += $"&buying_asset_code={counterAssetCode}&buying_asset_issuer={counterIssuer}";
+            }
+
+            url += $"&limit={maxItems / 2 + 1}";
+
+            return url;
+        }
     }
 }

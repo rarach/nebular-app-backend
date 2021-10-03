@@ -46,7 +46,7 @@ namespace NebularApi.DataCollectors
         {
             if (_inProgress)
             {
-                _logger.Warning("Cannot collect top exchanges now, another processing is still running");
+                _logger.Warning("Cannot collect top exchanges now, another round is still running");
                 return;
             }
 
@@ -79,7 +79,7 @@ namespace NebularApi.DataCollectors
         private void CollectTopExchanges(Dictionary<string, decimal> volumes, int count)
         {
             var topExchanges = new List<TopExchange>();
-            while (count-- > 0)
+            while (count > 0)
             {
                 decimal maxVolume = -1m;
                 string maxMarketId = null;
@@ -100,6 +100,12 @@ namespace NebularApi.DataCollectors
                 }
 
                 volumes.Remove(maxMarketId);
+
+                if (!_horizon.HasSufficientOrderbook(maxMarketId, 20))
+                {
+                    _logger.Info($"Market {maxMarketId} disqualified due to tiny orderbook.");
+                    continue;
+                }
 
                 string[] chunks = maxMarketId.Split(new char[] { '-', '/' });
                 var exchange = new TopExchange
@@ -123,6 +129,7 @@ namespace NebularApi.DataCollectors
                 exchange.counterAsset.issuer = counterIssuer;
 
                 topExchanges.Add(exchange);
+                count--;
             }
 
             _storage.Data = new TopExchanges
