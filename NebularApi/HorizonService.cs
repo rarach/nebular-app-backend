@@ -1,4 +1,5 @@
 ﻿using NebularApi.Models.Horizon;
+using NebularApi.Models.Nebular;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -68,6 +69,45 @@ namespace NebularApi
             }
 
             return trades;
+        }
+
+        /// <summary>
+        /// Get most recent executed trades of given exchange.
+        /// </summary>
+        /// <param name="hours">Limit of trade history length in hours</param>
+        /// <returns>List of prices</returns>
+        internal List<Trade> GetTrades(TopExchange market, int hours)
+        {
+            var filteredTrades = new List<Trade>();
+            DateTime minTimeUtc = DateTime.UtcNow.AddHours(-1 * hours);
+            string apiUrl = $"{_horizonUrl}/trades{GetUrlParameters(market, 200)}&order=desc";
+
+            try
+            {
+                string json = _webClient.DownloadString(apiUrl);
+
+                Trades tradesData = JsonSerializer.Deserialize<Trades>(json);
+                if (null != tradesData?._embedded?.records)
+                {
+                    foreach (Trade trade in tradesData._embedded.records)
+                    {
+                        if (trade.LedgerCloseTime >= minTimeUtc)
+                        {
+                            filteredTrades.Add(trade);
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error($"Error getting trade history for {market}. Message: {ex.Message}");
+            }
+
+            return filteredTrades;
         }
 
         internal decimal? GetAssetPriceInNative(string assetCode, string assetType, string assetIssuer)
@@ -152,13 +192,13 @@ namespace NebularApi
         }
 
         /// <summary>
-        /// Evaluates if market is rich enough based on its orderbook. i.e. with small number of asks/bids
+        /// Evaluates if market is rich enough based on its orderbook. i.e. with sufficient number of asks/bids
         /// </summary>
         /// <param name="marketId">Exchange to be evaluated</param>
         /// <param name="minOrderbookItems">Min. number of asks+bids to consider a market rich enough</param>
-        internal bool HasSufficientOrderbook(string marketId, ushort minOrderbookItems)
+        internal bool HasSufficientOrderbook(TopExchange market/*TODO:  Sooo, now we have a circular reference :-|   */, ushort minOrderbookItems)
         {
-            string url = GetOrderbookUrl(marketId, minOrderbookItems);
+            string url = $"{_horizonUrl}/order_book{GetUrlParameters(market, minOrderbookItems)}";
             try
             {
                 string json = _webClient.DownloadString(url);
@@ -174,58 +214,37 @@ namespace NebularApi
             }
             catch (Exception ex)
             {
-                _logger.Error($"Failed to get order-book for {marketId}. Message: {ex.Message}");
+                _logger.Error($"Failed to get order-book for {market}. Message: {ex.Message}");
                 return true;
             }
         }
 
-        private string GetOrderbookUrl(string marketId, ushort maxItems)
+
+        private string GetUrlParameters(TopExchange market, ushort maxItems = 0)
         {
-            string[] chunks = marketId.Split(new char[] { '-', '/' });
-            string baseAssetCode = chunks[0];
-            string baseIssuer = "native" == chunks[1] ? null : chunks[1];
-            string counterAssetCode = chunks[2];
-            string counterIssuer = "native" == chunks[3] ? null : chunks[3];
-
-
-            string url = $"{_horizonUrl}/order_book?selling_asset_type=";
-            if (null == baseIssuer)
+            string url = "?selling_asset_type=";
+            if (null == market.baseAsset.issuer)
             {
                 url += "native&selling_asset_code=XLM";
             }
             else
             {
-                if (baseAssetCode.Length <= 4)
-                {
-                    url += "credit_alphanum4";
-                }
-                else
-                {
-                    url += "credit_alphanum12";
-                }
-
-                url += $"&selling_asset_code={baseAssetCode}&selling_asset_issuer={baseIssuer}";
+                url += $"{market.baseAsset.type}&selling_asset_code={market.baseAsset.code}&selling_asset_issuer={market.baseAsset.issuer.address}";
             }
 
-            if (null == counterIssuer)
+            if (null == market.counterAsset.issuer)
             {
                 url += "&buying_asset_type=native&buying_asset_code=XLM";
             }
             else
             {
-                if (counterAssetCode.Length <= 4)
-                {
-                    url += "&buying_asset_type=credit_alphanum4";
-                }
-                else
-                {
-                    url += "&buying_asset_type=credit_alphanum12";
-                }
-
-                url += $"&buying_asset_code={counterAssetCode}&buying_asset_issuer={counterIssuer}";
+                url += $"&buying_asset_type={market.counterAsset.type}&buying_asset_code={market.counterAsset.code}&buying_asset_issuer={market.counterAsset.issuer.address}";
             }
 
-            url += $"&limit={maxItems / 2 + 1}";
+            if (maxItems > 0)
+            {
+                url += $"&limit={maxItems / 2 + 1}";
+            }
 
             return url;
         }

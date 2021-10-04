@@ -11,10 +11,14 @@ namespace NebularApi.DataCollectors
     /// Extract data about top exchanges in past 24 hours based on volume.
     /// </summary>
     /// <remarks>
-    /// Exchanges are filtered through blacklist of scam tokens. TODO!
+    /// Exchanges are filtered to exclude dubious markets (e.g. wash trading, hot/cold wallet transfers).
     /// </remarks>
     internal class TopExchangesCollector
     {
+        private const int TRADE_HISTORY_IN_HOURS = 24;
+        private const int TOP_EXCHANGES_COUNT = 12;
+        private const int TRADE_HISTORY_HOURS = 8;
+        private const int MIN_TRADE_COUNT = 40;
         private readonly ILog _logger;
         private readonly HorizonService _horizon;
         private readonly TopExchangesStorage _storage;
@@ -53,12 +57,12 @@ namespace NebularApi.DataCollectors
             _logger.Info("===================== Starting TopExchanges data collection =====================");
             _inProgress = true;
 
-            List<Trade> trades = _horizon.GetTrades(24);
+            List<Trade> trades = _horizon.GetTrades(TRADE_HISTORY_IN_HOURS);
 
             try
             {
                 Dictionary<string, decimal> volumes = CalculateVolume(trades);
-                CollectTopExchanges(volumes, 12);
+                CollectTopExchanges(volumes, TOP_EXCHANGES_COUNT);
 
                 _logger.Info($"Going to sleep for {_interval} minutes.");
             }
@@ -101,32 +105,19 @@ namespace NebularApi.DataCollectors
 
                 volumes.Remove(maxMarketId);
 
-                if (!_horizon.HasSufficientOrderbook(maxMarketId, 20))
+                TopExchange exchange = TopExchange.Create(maxMarketId, _horizon);
+
+                if (!_horizon.HasSufficientOrderbook(exchange, 30))
                 {
                     _logger.Info($"Market {maxMarketId} disqualified due to tiny orderbook.");
                     continue;
                 }
 
-                string[] chunks = maxMarketId.Split(new char[] { '-', '/' });
-                var exchange = new TopExchange
+                int recentTradesCount = _horizon.GetTrades(exchange, TRADE_HISTORY_HOURS).Count;
+                if (recentTradesCount < MIN_TRADE_COUNT)
                 {
-                    baseAsset = new Asset { code = chunks[0] },
-                    counterAsset = new Asset { code = chunks[2] }
-                };
-
-                Account baseIssuer = "native" == chunks[1] ? null : new Account { address = chunks[1] };
-                if (null != baseIssuer)
-                {
-                    baseIssuer.domain = _horizon.GetIssuerDomain(exchange.baseAsset.code, baseIssuer.address);
+                    _logger.Info($"Market {exchange} disqualified due to poor trade history (only {recentTradesCount} trades in last {TRADE_HISTORY_HOURS}h).");
                 }
-                exchange.baseAsset.issuer = baseIssuer;
-
-                Account counterIssuer = "native" == chunks[3] ? null : new Account { address = chunks[3] };
-                if (null != counterIssuer)
-                {
-                    counterIssuer.domain = _horizon.GetIssuerDomain(exchange.counterAsset.code, counterIssuer.address);
-                }
-                exchange.counterAsset.issuer = counterIssuer;
 
                 topExchanges.Add(exchange);
                 count--;
