@@ -138,7 +138,7 @@ namespace NebularApi.DataCollectors
 
             for (int i=1; i <= tradesCount; i++)
             {
-                Trade trade = trades[i];
+                Trade trade = trades[i-1];
 
                 if (i % 2000 == 0)
                 {
