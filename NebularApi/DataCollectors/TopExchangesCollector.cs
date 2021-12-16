@@ -134,14 +134,15 @@ namespace NebularApi.DataCollectors
         private Dictionary<string, decimal> CalculateVolume(IList<Trade> trades)
         {
             var volumes = new Dictionary<string, decimal>();
-            int count = 0;
+            int tradesCount = trades.Count;
 
-            foreach (Trade trade in trades)
+            for (int i=1; i <= tradesCount; i++)
             {
-                if (++count >= 1000)
+                Trade trade = trades[i];
+
+                if (i % 2000 == 0)
                 {
-                    count = 0;
-                    _logger.Info("Processed volume of another 1000 trades...");
+                    _logger.Info($"Processed volume of {i}/{tradesCount} trades...");
                 }
 
                 decimal volumeInNative = -1m;

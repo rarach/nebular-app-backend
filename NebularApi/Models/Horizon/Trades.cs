@@ -54,17 +54,30 @@ namespace NebularApi.Models.Horizon
             get { return DateTime.Parse(ledger_close_time); }
         }
 
+
+        private decimal _basePrice = -1;
+
         /// <summary>Price of base asset</summary>
         internal decimal BasePrice
         {
-            get { return price.n / price.d; }
+            get
+            {
+                if (-1 == _basePrice)
+                {
+                    _basePrice = price.Numerator / price.Denominator;
+                }
+                return _basePrice;
+            }
         }
     }
 
 
     public class Price
     {
-        public decimal n { get; set; }
-        public decimal d { get; set; }
+        public string n { get; set; }
+        public string d { get; set; }
+
+        internal decimal Numerator => Decimal.Parse(n);
+        internal decimal Denominator => Decimal.Parse(d);
     }
 }
