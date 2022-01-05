@@ -8,14 +8,14 @@ using System.Timers;
 namespace NebularApi.DataCollectors
 {
     /// <summary>
-    /// Extract data about top exchanges in past 24 hours based on volume.
+    /// Extract data about top exchanges in past N hours based on volume.
     /// </summary>
     /// <remarks>
     /// Exchanges are filtered to exclude dubious markets (e.g. wash trading, hot/cold wallet transfers).
     /// </remarks>
     internal class TopExchangesCollector
     {
-        private const int TRADE_HISTORY_IN_HOURS = 24;
+        private const int TRADE_HISTORY_IN_HOURS = 8;
         private const int TOP_EXCHANGES_COUNT = 12;
         private const int TRADE_HISTORY_HOURS = 8;
         private const int MIN_TRADE_COUNT = 40;
