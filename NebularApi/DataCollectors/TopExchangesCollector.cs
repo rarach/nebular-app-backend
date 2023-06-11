@@ -15,7 +15,7 @@ namespace NebularApi.DataCollectors
     /// </remarks>
     internal class TopExchangesCollector
     {
-        private const int TRADE_HISTORY_IN_HOURS = 8;
+        private const int TRADE_HISTORY_IN_HOURS = 4;
         private const int TOP_EXCHANGES_COUNT = 12;
         private const int TRADE_HISTORY_HOURS = 8;
         private const int MIN_TRADE_COUNT = 40;
@@ -54,6 +54,7 @@ namespace NebularApi.DataCollectors
                 return;
             }
 
+            _logger.Info($"[CONFIG: analyse trade history for past {TRADE_HISTORY_IN_HOURS} hours.]");
             _logger.Info("===================== Starting TopExchanges data collection =====================");
             _inProgress = true;
 
