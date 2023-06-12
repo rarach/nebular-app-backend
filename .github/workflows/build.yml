@@ -1,4 +1,4 @@
-name: CI
+name: CI+CD
 
 on: [push]
 
@@ -8,10 +8,10 @@ jobs:
     steps:
 
     - uses: actions/checkout@v2
-    - name: Setup .NET Core
-      uses: actions/setup-dotnet@v1
+    - name: Setup .NET v7
+      uses: actions/setup-dotnet@v3
       with:
-        dotnet-version: '3.1.101'
+        dotnet-version: '7.0.x'
 
     # PROD build
     - name: Build and publish with dotnet
