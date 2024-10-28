@@ -2,27 +2,26 @@
 using System;
 
 
-namespace NebularApi.Controllers
+namespace NebularApi.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+public class LogsController : ControllerBase
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    public class LogsController : ControllerBase
+    private readonly ILog _logger;
+
+
+    public LogsController(ILog logger)
     {
-        private readonly ILog _logger;
+        _logger = logger;
+    }
 
 
-        public LogsController(ILog logger)
-        {
-            _logger = logger;
-        }
-
-
-        [HttpGet]
-        public string Get()
-        {
-            var logLines = _logger.Dumb();
-            string allLogs = String.Join(Environment.NewLine, logLines);
-            return allLogs;
-        }
+    [HttpGet]
+    public string Get()
+    {
+        var logLines = _logger.Dumb();
+        string allLogs = String.Join(Environment.NewLine, logLines);
+        return allLogs;
     }
 }

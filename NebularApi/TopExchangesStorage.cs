@@ -1,10 +1,9 @@
 ﻿using NebularApi.Models.Nebular;
 
 
-namespace NebularApi
+namespace NebularApi;
+
+public class TopExchangesStorage
 {
-    public class TopExchangesStorage
-    {
-        internal TopExchanges Data { get; set; }
-    }
+    internal TopExchanges Data { get; set; }
 }
