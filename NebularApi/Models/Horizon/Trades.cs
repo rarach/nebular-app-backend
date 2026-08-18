@@ -2,82 +2,81 @@
 using System.Collections.Generic;
 
 
-namespace NebularApi.Models.Horizon
+namespace NebularApi.Models.Horizon;
+
+/// <summary>
+/// As seen on {HORIZON}/trades
+/// </summary>
+public class Trades
 {
+    public EmbeddedTradeRecords _embedded { get; set; }
+}
+
+public class EmbeddedTradeRecords
+{
+    public List<Trade> records { get; set; }
+}
+
+public class Trade
+{
+    public string paging_token { get; set; }
+    public string ledger_close_time { get; set; }
+    public string base_amount { get; set; }
     /// <summary>
-    /// As seen on {HORIZON}/trades
+    /// "native" for XLM
     /// </summary>
-    public class Trades
+    public string base_asset_type { get; set; }
+    public string base_asset_code { get; set; }
+    public string base_asset_issuer { get; set; }
+    public string counter_amount { get; set; }
+    /// <summary>
+    /// "native" for XLM
+    /// </summary>
+    public string counter_asset_type { get; set; }
+    public string counter_asset_code { get; set; }
+    public string counter_asset_issuer { get; set; }
+
+    public Price price { get; set; }
+
+
+    internal decimal BaseAmount
     {
-        public EmbeddedTradeRecords _embedded { get; set; }
+        get { return Decimal.Parse(base_amount); }
     }
 
-    public class EmbeddedTradeRecords
+    internal decimal CounterAmount
     {
-        public List<Trade> records { get; set; }
+        get { return Decimal.Parse(counter_amount); }
     }
 
-    public class Trade
+    internal DateTime LedgerCloseTime
     {
-        public string paging_token { get; set; }
-        public string ledger_close_time { get; set; }
-        public string base_amount { get; set; }
-        /// <summary>
-        /// "native" for XLM
-        /// </summary>
-        public string base_asset_type { get; set; }
-        public string base_asset_code { get; set; }
-        public string base_asset_issuer { get; set; }
-        public string counter_amount { get; set; }
-        /// <summary>
-        /// "native" for XLM
-        /// </summary>
-        public string counter_asset_type { get; set; }
-        public string counter_asset_code { get; set; }
-        public string counter_asset_issuer { get; set; }
-
-        public Price price { get; set; }
+        get { return DateTime.Parse(ledger_close_time); }
+    }
 
 
-        internal decimal BaseAmount
+    private decimal _basePrice = -1;
+
+    /// <summary>Price of base asset</summary>
+    internal decimal BasePrice
+    {
+        get
         {
-            get { return Decimal.Parse(base_amount); }
-        }
-
-        internal decimal CounterAmount
-        {
-            get { return Decimal.Parse(counter_amount); }
-        }
-
-        internal DateTime LedgerCloseTime
-        {
-            get { return DateTime.Parse(ledger_close_time); }
-        }
-
-
-        private decimal _basePrice = -1;
-
-        /// <summary>Price of base asset</summary>
-        internal decimal BasePrice
-        {
-            get
+            if (-1 == _basePrice)
             {
-                if (-1 == _basePrice)
-                {
-                    _basePrice = price.Numerator / price.Denominator;
-                }
-                return _basePrice;
+                _basePrice = price.Numerator / price.Denominator;
             }
+            return _basePrice;
         }
     }
+}
 
 
-    public class Price
-    {
-        public string n { get; set; }
-        public string d { get; set; }
+public class Price
+{
+    public string n { get; set; }
+    public string d { get; set; }
 
-        internal decimal Numerator => Decimal.Parse(n);
-        internal decimal Denominator => Decimal.Parse(d);
-    }
+    internal decimal Numerator => Decimal.Parse(n);
+    internal decimal Denominator => Decimal.Parse(d);
 }
