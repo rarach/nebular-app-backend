@@ -7,11 +7,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-    - uses: actions/checkout@v2
-    - name: Setup .NET v8
-      uses: actions/setup-dotnet@v3
+    - uses: actions/checkout@v7
+    - name: Setup .NET v9
+      uses: actions/setup-dotnet@v6
       with:
-        dotnet-version: '8.0.x'
+        dotnet-version: '9.0.x'
 
     # PROD build
     - name: Build and publish with dotnet
